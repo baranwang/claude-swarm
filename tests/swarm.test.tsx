@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import { avatarSvg, graphSvg } from '../hooks/graph'
-import { edges, isLooping, LOOP_LIMIT, preview, resolve } from '../hooks/register'
+import { edges, emph, isLooping, LOOP_LIMIT, preview, resolve } from '../hooks/register'
 
 const PANE = {
   plugin: 'swarm',
@@ -51,6 +51,8 @@ test('a long post previews as whole lines with an open code span closed', () => 
   expect((long.text.match(/`/g) ?? []).length % 2).toBe(0)
   expect(preview('a\nb\nc\nd\ne').text).toBe('a\nb\nc\nd …')
   expect(avatarSvg('parser')).toContain('>PA<')
+  // Underscores stay literal outside code, so __init__.py is not drawn bold; inside code they are left alone.
+  expect(emph('see mdlinks/__init__.py and `a__b` @fix_1')).toBe('see mdlinks/\\_\\_init\\_\\_.py and `a__b` **@fix\\_1**')
   expect(avatarSvg('coordinator')).not.toContain('<text')
 })
 
@@ -158,6 +160,7 @@ test('the status row shows the latest post of a live swarm until dismissed', asy
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('prompt.submit', (_, e) => ({ text: e.text }))
   on('clock.after', () => ({ value: {} }))
+  on('agent.spawn', () => ({ model: 'm' }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   // Dismissed, the row goes to what is beneath: here a stand-in for the engine.
   on('ui.render', ($, e) => {
@@ -166,6 +169,18 @@ test('the status row shows the latest post of a live swarm until dismissed', asy
   })
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
+  // A title given before the first worker survives that worker's spawn (the stub spawn starts none).
+  await $.tool.call({ tool: 'mcp__swarm__swarm_title', title: 'Titled first' })
+  await $.tool.call({ tool: 'mcp__swarm__swarm_spawn', name: 'p', brief: 'y' })
+  await $.tool.call({ tool: 'mcp__swarm__board_post', text: 'first' })
+  const early = await $.ui.mount({
+    plugin: 'swarm',
+    component: 'AbovePrompt',
+    surface: 'desktop',
+    props: { hasSurvey: false, isCollapsed: false, isWorking: false, maxRows: 3, bodyColumns: 120 },
+  } as never)
+  expect((await early.find({ type: 'Text', text: /Titled first/ }))).toBeDefined()
+  await early.unmount()
   await $.command.run({ command: 'swarm', args: 'Build the parser' })
   await $.tool.call({ tool: 'mcp__swarm__board_post', text: 'kickoff for @all' })
 

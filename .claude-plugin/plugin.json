@@ -1,6 +1,6 @@
 {
   "name": "swarm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Swarm mode for Claude Code: a coordinator plus named workers that talk on one shared @mention board, with a Board / Members / Graph pane",
   "author": { "name": "baranwang" },
   "homepage": "https://github.com/baranwang/claude-swarm",

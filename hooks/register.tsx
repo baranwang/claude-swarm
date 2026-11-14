@@ -60,8 +60,22 @@ const clip = (t: string, n: number) => {
   return one.length > n ? one.slice(0, Math.max(1, n - 1)) + '…' : one
 }
 const hhmm = (at: number) => new Date(at).toTimeString().slice(0, 5)
-// Mentions stand out in a post opened in full.
-const emph = (t: string) => t.replace(/(^|\s)@([A-Za-z0-9_-]+)/g, '$1**@$2**')
+// Posts are drawn as Markdown, where `__init__.py` would turn bold: underscores outside code are escaped.
+const escapeUnderscores = (t: string) => {
+  let isCode = false
+  return t
+    .split(/(`+)/)
+    .map(part => {
+      if (/^`+$/.test(part)) {
+        isCode = !isCode
+        return part
+      }
+      return isCode ? part : part.replace(/_/g, '\\_')
+    })
+    .join('')
+}
+// Mentions stand out in a post's text.
+export const emph = (t: string) => escapeUnderscores(t).replace(/(^|\s)@([A-Za-z0-9\\_-]+)/g, '$1**@$2**')
 // A worker's report opens with the mentions it was addressed by; the row shows what it says.
 const gist = (t: string) => t.replace(/^(\s*@[A-Za-z0-9_-]+)+\s*/, '')
 // The opening of a post for the feed: whole lines up to a budget, with an unclosed code span closed.
@@ -372,7 +386,11 @@ export const register: Register = on => {
     if (denied) return denied
     const title = str(e.title).slice(0, 80)
     if (!title) return { deny: 'title is empty' }
-    await update($, info, i => ({ ...i, task: title }))
+    // Titling an ended swarm starts the next one, so the first spawn after it keeps the title.
+    if (!(await read($, info)).isOn) {
+      await resetSwarm($)
+      await update($, info, () => ({ ...IDLE, isOn: true, task: title, lastActivity: Date.now() }))
+    } else await update($, info, i => ({ ...i, task: title }))
     return ok(`Swarm titled "${title}".`)
   })
 
