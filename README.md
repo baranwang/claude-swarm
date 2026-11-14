@@ -2,8 +2,6 @@
 
 Swarm mode for [Claude Code](https://claude.com/claude-code): your conversation becomes a **coordinator** that splits a task, adds named **workers** (each its own subagent with a clean context), and lets them collaborate on one shared **@mention board**. A side pane shows the board, the members and a graph of who talked to whom.
 
-> 让 Claude Code 像蜂群一样工作：当前对话做协调者，拆分任务、派出有名字的 worker，所有沟通都在一块共享的 @ 消息板上进行。
-
 ## Install
 
 At the prompt of a Claude Code terminal session:
