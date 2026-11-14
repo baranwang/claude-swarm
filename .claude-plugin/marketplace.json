@@ -1,0 +1,6 @@
+{
+  "name": "claude-swarm",
+  "owner": { "name": "baranwang" },
+  "metadata": { "description": "Swarm mode for Claude Code: a coordinator and named workers on one @mention board" },
+  "plugins": [{ "name": "swarm", "source": "./" }]
+}
